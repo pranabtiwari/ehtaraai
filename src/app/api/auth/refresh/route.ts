@@ -17,8 +17,15 @@ export async function POST() {
     try {
       const decoded = verifyRefreshToken(refreshToken);
 
+      if (typeof decoded === 'string' || !('userId' in decoded)) {
+        return new Response(
+          JSON.stringify({ message: 'Invalid refresh token' }),
+          { status: 401 },
+        );
+      }
+
       // 🔥 (Recommended) check user exists
-      const user = await User.findById(decoded._id);
+      const user = await User.findById(decoded.userId);
 
       if (!user) {
         return new Response(JSON.stringify({ message: 'User not found' }), {
@@ -27,9 +34,7 @@ export async function POST() {
       }
 
       // ✅ generate new access token
-      const accessToken = generateAccessToken({
-        _id: user._id,
-      });
+      const accessToken = generateAccessToken(user._id.toString());
 
       return new Response(JSON.stringify({ accessToken }), {
         status: 200,
